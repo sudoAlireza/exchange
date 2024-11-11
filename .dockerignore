@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+*.egg-info/
+.eggs/
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+*.tar.gz
+*.whl
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# Media and static files (if generated locally and copied separately)
+media/
+static/
+staticfiles/
+
+# Sensitive or environment-specific files
+*.env
+.env.*
+secrets.json
+
+# IDE / Editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Docker-specific files
+docker-compose.override.yml
+
+# Node / frontend (if applicable)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Miscellaneous
+*.bak
+*.tmp
+*.swp
+*.pid
+
+# Cache directories
+*.cache
