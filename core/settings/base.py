@@ -196,3 +196,7 @@ AUTH_USER_MODEL = "user.User"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+BINANCE_BUY_CURRENCY_API = os.environ.get("BINANCE_BUY_CURRENCY_API")
+BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY")

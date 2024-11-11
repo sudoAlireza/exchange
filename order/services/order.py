@@ -9,13 +9,29 @@ from order.exchanges.binance import Binance
 from order.models import Order
 
 
-logging.getLogger("binance-order")
-class OrderHandler:
+logger = logging.getLogger("order-handler")
 
+
+class OrderHandler:
     @staticmethod
     def process_order(user, currency_code, amount, total_cost):
+        logger.info("Starting order processing for user %s, currency %s, amount %s, total cost %s",
+                    user.id, currency_code, amount, total_cost)
 
-        new_order = Order.objects.create(
+        new_order = OrderHandler._create_new_order(user, currency_code, amount)
+        total_amount = OrderHandler._calculate_total_amount()
+
+        if total_amount >= Decimal("10"):
+            return OrderHandler._process_exchange(new_order, currency_code, total_amount)
+
+        logger.info("Total amount less than 10, order created in PENDING status.")
+        return "Order created as PENDING.", new_order
+
+    @staticmethod
+    def _create_new_order(user, currency_code, amount):
+        logger.debug("Creating new order for user %s with currency %s", user.id, currency_code)
+
+        return Order.objects.create(
             user=user,
             order_type=OrderTypeChoices.BUY,
             currency_pair="USD/ABAN",
@@ -24,37 +40,46 @@ class OrderHandler:
             status=OrderStatusChoices.PENDING,
         )
 
+    @staticmethod
+    def _calculate_total_amount():
+        logger.debug("Calculating total amount for pending orders.")
         current_pending_sum = Order.objects.filter(
             currency_pair="USD/ABAN",
             status=OrderStatusChoices.PENDING,
         ).aggregate(total_amount=Sum("amount"))["total_amount"] or Decimal("0")
 
-        total_amount = (current_pending_sum * 4) + total_cost
+        total_cost = current_pending_sum * Decimal("4")  
+        logger.debug("Current pending sum: %s, total cost: %s", current_pending_sum, total_cost)
 
-        if total_amount >= Decimal("10"):
-            try:
-                #TODO: it's better to add celery and rabbit to project and do this in queues
-                Binance.buy_from_exchange(
-                    currency_code=currency_code, amount=total_amount
-                )
+        return total_cost
 
-                Order.objects.filter(
-                    currency_pair="USD/ABAN",
-                    status=OrderStatusChoices.PENDING,
-                ).update(status=OrderStatusChoices.SUCCEEDED)
-                new_order.status = OrderStatusChoices.SUCCEEDED
-                new_order.save()
+    @staticmethod
+    def _process_exchange(new_order, currency_code, total_amount):
+        logger.info("Attempting to process exchange for total amount: %s", total_amount)
 
-                return "Buy request sent and orders marked as COMPLETED.", new_order
+        try:
             
-            except ExchangeNotRespond:
-                logging.error("Error in connecting to Binance")
-                raise ExchangeNotRespond
+            Binance.buy_from_exchange(currency_code=currency_code, amount=total_amount)
+            OrderHandler._mark_orders_as_succeeded()
 
-            except Exception as e:
-                # TODO: logging messages and process should improve
-                logging.error(f"Error processing order: {e}")
-                raise ValueError(f"Error processing order: {e}")
+            new_order.status = OrderStatusChoices.SUCCEEDED
+            new_order.save()
 
-        else:
-            return "Order created as PENDING.", new_order
+            logger.info("Buy request sent and orders marked as COMPLETED.")
+            return "Buy request sent and orders marked as COMPLETED.", new_order
+
+        except ExchangeNotRespond:
+            logger.error("Error connecting to Binance exchange. ExchangeNotRespond.")
+            raise ExchangeNotRespond("Error connecting to Binance exchange.")
+
+        except Exception as e:
+            logger.error(f"Unexpected error while processing order: {e}")
+            raise ValueError(f"Error processing order: {e}")
+
+    @staticmethod
+    def _mark_orders_as_succeeded():
+        logger.debug("Marking all pending orders as SUCCEEDED.")
+        Order.objects.filter(
+            currency_pair="USD/ABAN",
+            status=OrderStatusChoices.PENDING,
+        ).update(status=OrderStatusChoices.SUCCEEDED)
