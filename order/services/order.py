@@ -1,13 +1,17 @@
+import logging
 from decimal import Decimal
 
 from django.db.models import Sum
 
 from order.consts import OrderStatusChoices, OrderTypeChoices
+from order.exceptions import ExchangeNotRespond
 from order.exchanges.binance import Binance
 from order.models import Order
 
 
+logging.getLogger("binance-order")
 class OrderHandler:
+
     @staticmethod
     def process_order(user, currency_code, amount, total_cost):
 
@@ -29,6 +33,7 @@ class OrderHandler:
 
         if total_amount >= Decimal("10"):
             try:
+                #TODO: it's better to add celery and rabbit to project and do this in queues
                 Binance.buy_from_exchange(
                     currency_code=currency_code, amount=total_amount
                 )
@@ -41,10 +46,15 @@ class OrderHandler:
                 new_order.save()
 
                 return "Buy request sent and orders marked as COMPLETED.", new_order
+            
+            except ExchangeNotRespond:
+                logging.error("Error in connecting to Binance")
+                raise ExchangeNotRespond
 
             except Exception as e:
-
-                raise ValueError("Error processing order: {e}")
+                # TODO: logging messages and process should improve
+                logging.error(f"Error processing order: {e}")
+                raise ValueError(f"Error processing order: {e}")
 
         else:
             return "Order created as PENDING.", new_order

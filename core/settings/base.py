@@ -61,41 +61,73 @@ MIDDLEWARE = [
 
 REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO  # django-request-logging
 REQUEST_LOGGING_ENABLE_COLORIZE = False
-DJANGO_REQUEST_LOGGING_LOG_HEADERS_DEFAULT_VALUE = False
+DJANGO_REQUEST_LOGGING_LOG_HEADERS_DEFAULT_VALUE = True
 DJANGO_REQUEST_LOGGING_LOG_RESPONSE_DEFAULT_VALUE = True
 
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'filters': {
-        'ignore_openapi_logs': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': lambda record: not record.getMessage().startswith('b\''),
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "ignore_openapi_logs": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda record: not record.getMessage().startswith("b'"),
         },
     },
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "timestamp": True,
+            "json_ensure_ascii": False,
+            "reserved_attrs": (
+                "args",
+                "asctime",
+                "created",
+                "exc_info",
+                "exc_text",
+                "filename",
+                "funcName",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "message",
+                "msg",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "stack_info",
+                "thread",
+                "threadName",
+            ),
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'filters': ['ignore_openapi_logs'],
-            'propagate': False,
+    "handlers": {
+        "console": {
+            "level": logging.getLevelName(os.environ.get("APP_LOG_LEVEL", "INFO").upper()),
+            "class": "logging.StreamHandler",
+            "formatter": "json",
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'filters': ['ignore_openapi_logs'],
-            'propagate': False,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": logging.getLevelName(os.environ.get("APP_LOG_LEVEL", "INFO").upper()),
+            "propagate": True,
         },
+        "django.request": {
+            "handlers": ["console"],
+            "level": logging.getLevelName(os.environ.get("APP_LOG_LEVEL", "INFO").upper()),
+            "filters": ["ignore_openapi_logs"],
+            "propagate": False,
+        },
+    },
+    "root": {
+        "level": logging.getLevelName(os.environ.get("APP_LOG_LEVEL", "INFO").upper()),
+        "handlers": ["console"],
     },
 }
-
 
 
 ROOT_URLCONF = "core.urls"
@@ -155,10 +187,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 if DEBUG:
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 AUTH_USER_MODEL = "user.User"
 
