@@ -16,5 +16,5 @@ class AbstractExchange(ABC):
         pass
 
     @abstractmethod
-    def sell_to_exchange(cls, currency_code, amount) -> dict:
+    def sell_to_exchange(currency_code: str, amount: Decimal) -> dict:
         pass
