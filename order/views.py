@@ -1,6 +1,7 @@
 import logging
 
 from django.db import transaction
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
@@ -16,6 +17,8 @@ from drf_spectacular.utils import extend_schema
 
 
 logger = logging.getLogger("order-views")
+
+
 class PurchaseOrderView(APIView):
 
     @extend_schema(
@@ -28,23 +31,38 @@ class PurchaseOrderView(APIView):
 
         if not serializer.is_valid():
             logger.error("Invalid data received: %s", serializer.errors)
-            serializer.is_valid(raise_exception=True)
+            return Response(
+                {"detail": "Invalid data."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         currency_code = serializer.validated_data["currency_code"]
         amount = serializer.validated_data["amount"]
         user = request.user
 
-        logger.info("Processing purchase for user %s with currency %s and amount %s", user, currency_code, amount)
+        logger.info(
+            "Processing purchase for user %s with currency %s and amount %s",
+            user,
+            currency_code,
+            amount,
+        )
+
+        source_wallet = Wallet.objects.filter(
+            user=user, currency=Currency.objects.filter(code="USD").first()
+        ).first()
 
         currency = get_object_or_404(Currency, code=currency_code)
         wallet = get_object_or_404(Wallet, user=user, currency=currency)
-
         total_cost = currency.price * amount
         logger.debug("Calculated total cost: %s", total_cost)
 
         try:
             with transaction.atomic():
                 logger.info("Adjusting wallet balance.")
+
+                source_wallet.adjust_balance(
+                    -total_cost, TransactionChoices.PURCHASE
+                )
                 wallet.adjust_balance(amount, TransactionChoices.PURCHASE)
                 logger.info("Processing order.")
                 message, order = OrderHandler.process_order(
@@ -54,7 +72,9 @@ class PurchaseOrderView(APIView):
             if order:
                 logger.info("Order created successfully with ID: %s", order.id)
             else:
-                logger.warning("Order creation failed.")
+                logger.warning(
+                    f"Order creation failed | {user.id} | {currency_code} | {wallet.id} | {total_cost}"
+                )
 
             return Response(
                 {"detail": message, "order_id": order.id if order else None},
@@ -66,8 +86,8 @@ class PurchaseOrderView(APIView):
             )
 
         except Exception as e:
-            logger.exception("Error occurred during order processing.")
+            logger.exception("Error occurred during order processing: %s", e)
             return Response(
                 {"detail": "An error occurred. Please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
