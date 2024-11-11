@@ -11,7 +11,10 @@ class AbstractExchange(ABC):
     def set_order(currnecy: str, amount: Decimal):
         pass
 
-
     @abstractmethod
     def buy_from_exchange(currnecy: str, amount: Decimal):
+        pass
+
+    @abstractmethod
+    def sell_to_exchange(cls, currency_code, amount) -> dict:
         pass
