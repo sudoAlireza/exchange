@@ -19,7 +19,7 @@ class OrderHandler:
                     user.id, currency_code, amount, total_cost)
 
         new_order = OrderHandler._create_new_order(user, currency_code, amount)
-        total_amount = OrderHandler._calculate_total_amount()
+        total_amount = OrderHandler._calculate_total_amount(currency_code)
 
         if total_amount >= Decimal("10"):
             return OrderHandler._process_exchange(new_order, currency_code, total_amount)
@@ -34,17 +34,17 @@ class OrderHandler:
         return Order.objects.create(
             user=user,
             order_type=OrderTypeChoices.BUY,
-            currency_pair="USD/ABAN",
+            currency_pair=f"USD/{currency_code}",
             price=Decimal("4"),
             amount=amount,
             status=OrderStatusChoices.PENDING,
         )
 
     @staticmethod
-    def _calculate_total_amount():
+    def _calculate_total_amount(currency_code):
         logger.debug("Calculating total amount for pending orders.")
         current_pending_sum = Order.objects.filter(
-            currency_pair="USD/ABAN",
+            currency_pair=f"USD/{currency_code}",
             status=OrderStatusChoices.PENDING,
         ).aggregate(total_amount=Sum("amount"))["total_amount"] or Decimal("0")
 
@@ -60,7 +60,7 @@ class OrderHandler:
         try:
             
             Binance.buy_from_exchange(currency_code=currency_code, amount=total_amount)
-            OrderHandler._mark_orders_as_succeeded()
+            OrderHandler._mark_orders_as_succeeded(currency_code)
 
             new_order.status = OrderStatusChoices.SUCCEEDED
             new_order.save()
@@ -77,9 +77,9 @@ class OrderHandler:
             raise ValueError(f"Error processing order: {e}")
 
     @staticmethod
-    def _mark_orders_as_succeeded():
+    def _mark_orders_as_succeeded(currency_code):
         logger.debug("Marking all pending orders as SUCCEEDED.")
         Order.objects.filter(
-            currency_pair="USD/ABAN",
+            currency_pair=f"USD/{currency_code}",
             status=OrderStatusChoices.PENDING,
         ).update(status=OrderStatusChoices.SUCCEEDED)
