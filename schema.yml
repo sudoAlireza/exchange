@@ -1,0 +1,237 @@
+openapi: 3.0.3
+info:
+  title: Exchange API
+  version: 1.0.0
+  description: Simple exchange api documentation
+paths:
+  /order/purchase/:
+    post:
+      operationId: order_purchase_create
+      tags:
+      - order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /wallet/addresses/:
+    get:
+      operationId: wallet_addresses_list
+      tags:
+      - wallet
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WalletAddress'
+          description: ''
+    post:
+      operationId: wallet_addresses_create
+      tags:
+      - wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletAddress'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WalletAddress'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WalletAddress'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletAddress'
+          description: ''
+  /wallet/deposit/:
+    post:
+      operationId: wallet_deposit_create
+      tags:
+      - wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositWithdraw'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DepositWithdraw'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DepositWithdraw'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositWithdraw'
+          description: ''
+  /wallet/withdraw/:
+    post:
+      operationId: wallet_withdraw_create
+      tags:
+      - wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositWithdraw'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DepositWithdraw'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DepositWithdraw'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositWithdraw'
+          description: ''
+components:
+  schemas:
+    DepositWithdraw:
+      type: object
+      properties:
+        currency_code:
+          type: string
+          maxLength: 10
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+      required:
+      - amount
+      - currency_code
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        order_type:
+          $ref: '#/components/schemas/OrderTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        currency_pair:
+          type: string
+          maxLength: 10
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+        user:
+          type: integer
+      required:
+      - amount
+      - created_at
+      - currency_pair
+      - id
+      - order_type
+      - price
+      - updated_at
+      - user
+    OrderTypeEnum:
+      enum:
+      - buy
+      - sell
+      type: string
+      description: |-
+        * `buy` - buy
+        * `sell` - sell
+    PurchaseOrder:
+      type: object
+      properties:
+        currency_code:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+      required:
+      - amount
+      - currency_code
+    StatusEnum:
+      enum:
+      - requested
+      - pending
+      - succeeded
+      - failed
+      type: string
+      description: |-
+        * `requested` - requested
+        * `pending` - pending
+        * `succeeded` - succeeded
+        * `failed` - failed
+    WalletAddress:
+      type: object
+      properties:
+        address:
+          type: string
+          readOnly: true
+        currency_code:
+          type: string
+      required:
+      - address
+      - currency_code
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
