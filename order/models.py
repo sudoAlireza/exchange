@@ -22,3 +22,10 @@ class Order(BaseTimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.order_type} {self.amount} {self.currency_pair} @ {self.price}"
+
+
+#TODO: the better way to do this part is create Market model with pair currencies
+# and in Order class we would have two separate field related to currency model
+# also it's better to create a job to check prices from exchanges APIs and store in cache
+# in buy orders we could fetch and sort them, then with Strategy design pattern run `buy_from_exchange` method for exchanges that have same abstract class
+# also I added `sell_to_exchange` method to `AbstractExchange` but not implemented
