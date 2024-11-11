@@ -14,7 +14,7 @@ class Wallet(BaseTimestampedModel):
     user = models.ForeignKey(
         "user.User", on_delete=models.PROTECT, related_name="wallets"
     )
-    currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, related_name="wallet")
     balance = models.DecimalField(
         max_digits=20, decimal_places=8, default=0, validators=[MinValueValidator(0)]
     )
