@@ -26,7 +26,7 @@ class Wallet(BaseTimestampedModel):
         return f"{self.user.username}'s {self.currency.code} Wallet"
 
     def _create_transaction(
-        self, amount, transaction_type, related_address=None, details=None
+        self, amount: Decimal, transaction_type: TransactionChoices, related_address=None, details=None
     ):
 
         transaction = Transaction.objects.create(
@@ -37,7 +37,7 @@ class Wallet(BaseTimestampedModel):
         )
         return transaction
 
-    def _create_transaction_log(self, transaction, previous_balance, details=None):
+    def _create_transaction_log(self, transaction, previous_balance: Decimal, details=None):
 
         TransactionLog.objects.create(
             transaction=transaction,

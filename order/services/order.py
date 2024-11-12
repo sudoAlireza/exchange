@@ -7,14 +7,14 @@ from order.consts import OrderStatusChoices, OrderTypeChoices
 from order.exceptions import ExchangeNotRespond
 from order.exchanges.binance import Binance
 from order.models import Order
-
+from user.models import User
 
 logger = logging.getLogger("order-handler")
 
 
 class OrderHandler:
     @staticmethod
-    def process_order(user, currency_code, amount, total_cost):
+    def process_order(user: User, currency_code: str, amount: Decimal, total_cost: Decimal) -> tuple[str, Order]:
         logger.info("Starting order processing for user %s, currency %s, amount %s, total cost %s",
                     user.id, currency_code, amount, total_cost)
 
@@ -28,7 +28,7 @@ class OrderHandler:
         return "Order created as PENDING.", new_order
 
     @staticmethod
-    def _create_new_order(user, currency_code, amount):
+    def _create_new_order(user: User, currency_code: str, amount: Decimal) -> Order:
         logger.debug("Creating new order for user %s with currency %s", user.id, currency_code)
 
         return Order.objects.create(
@@ -41,7 +41,7 @@ class OrderHandler:
         )
 
     @staticmethod
-    def _calculate_total_amount(currency_code):
+    def _calculate_total_amount(currency_code: str) -> Decimal:
         logger.debug("Calculating total amount for pending orders.")
         current_pending_sum = Order.objects.filter(
             currency_pair=f"USD/{currency_code}",
@@ -54,7 +54,7 @@ class OrderHandler:
         return total_cost
 
     @staticmethod
-    def _process_exchange(new_order, currency_code, total_amount):
+    def _process_exchange(new_order: Order, currency_code: str, total_amount: Decimal) -> tuple[str, Order]:
         logger.info("Attempting to process exchange for total amount: %s", total_amount)
 
         try:
@@ -77,7 +77,7 @@ class OrderHandler:
             raise ValueError(f"Error processing order: {e}")
 
     @staticmethod
-    def _mark_orders_as_succeeded(currency_code):
+    def _mark_orders_as_succeeded(currency_code: str) -> None:
         logger.debug("Marking all pending orders as SUCCEEDED.")
         Order.objects.filter(
             currency_pair=f"USD/{currency_code}",

@@ -1,7 +1,6 @@
 import logging
 
 from django.db import transaction
-from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status

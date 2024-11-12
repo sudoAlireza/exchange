@@ -7,14 +7,17 @@ class AbstractExchange(ABC):
         self.request_timeout = request_timeout
         self.request_delay = request_delay
 
+    @classmethod
     @abstractmethod
-    def set_order(currnecy: str, amount: Decimal):
+    def set_order(cls, currency: str, amount: Decimal) -> dict:
         pass
 
+    @classmethod
     @abstractmethod
-    def buy_from_exchange(currnecy: str, amount: Decimal):
+    def buy_from_exchange(cls, currency: str, amount: Decimal) -> dict:
         pass
 
+    @classmethod
     @abstractmethod
-    def sell_to_exchange(currency_code: str, amount: Decimal) -> dict:
+    def sell_to_exchange(cls, currency_code: str, amount: Decimal) -> dict:
         pass

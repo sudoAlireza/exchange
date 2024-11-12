@@ -1,4 +1,6 @@
 import logging
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import transaction
 from rest_framework import status
@@ -13,7 +15,7 @@ class Binance(AbstractExchange):
     """Handles interactions with the Binance exchange."""
 
     @classmethod
-    def set_order(cls, currency_code, amount):
+    def set_order(cls, currency_code: str, amount: Decimal) -> dict:
 
         logger.info("Preparing to set an order for currency: %s, amount: %s", currency_code, amount)
 
